@@ -1,4 +1,4 @@
-
+const english = `
 1 In the beginning God created the heaven and the earth.
 2 Now the earth was unformed and void, and darkness was upon the face of the deep; and the spirit of God hovered over the face of the waters.
 3 And God said: 'Let there be light.' And there was light.
@@ -6040,4 +6040,6 @@ Chapter 34
 11 in all the signs and the wonders, which the LORD sent him to do in the land of Egypt, to Pharaoh, and to all his servants, and to all his land;
 12 and in all the mighty hand, and in all the great terror, which Moses wrought in the sight of all Israel. {P}
 
-{B}
+{B}`;
+
+export default english;
