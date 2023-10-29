@@ -13,13 +13,13 @@ const constants = {
 
 export function clean(str: string) {
     if (str.match(/[א-ת]/)) {
-        return cleanHebrew(str);
+        return simpleCleanH(str);
     } else {
-        return cleanEnglish(str);
+        return simpleCleanE(str);
     }
 }
 
-export function simpleClean(str: string) {
+export function simpleCleanH(str: string) {
     const posuk = new RegExp(/[א-ת]{1,2},[א-ת]{1,2}/, 'gi');
     let result = str.replaceAll(posuk, '');
     result = result.replaceAll(/[^א-ת]/g, " ");
@@ -31,6 +31,28 @@ export function simpleClean(str: string) {
     result = result.replaceAll(' ', '<S><E>');
     return `<S>${result}<E>`
 }
+
+function simpleCleanE(str: string) {
+    const chapter = new RegExp(/Chapter\s\d{1,3}/, 'gi');
+    const posuk = new RegExp(/\d{1,3}/, 'gi');
+
+    let result = str.replaceAll(chapter, ' ');
+    result = result.replaceAll(posuk, ' ');
+    result = result.replaceAll('{P}', ' ');
+    result = result.replaceAll('{S}',  ' ');
+    result = result.replaceAll('{B}', ' ');
+
+    result = result.replace(/\s+/g, ' ');
+    // result = result.split('').map(c => {
+    //     const lower = c.toLowerCase();
+    //     return c == lower ? c : `${constants.cap}${lower}`
+    // }).join('')
+    result = result.trim();
+    result = result.replaceAll(' ', '<S><E>');
+    return `<S>${result}<E>`
+}
+
+
 
 
 export class DumbTokenizer {
@@ -95,43 +117,43 @@ export class DumbTokenizer {
 
 
 
-function cleanHebrew(str: string) {
-    const posuk = new RegExp(/\s[א-ת]{1,2},[א-ת]{1,2}/, 'gi');
-    const parsha_p = new RegExp(/\s{2}{פ}/, 'gi');
-    const parsha_s = new RegExp(/\s{2}{ס}/, 'gi');
-    const sefer = new RegExp(/{ספר}/, 'gi');
-    const mid = new RegExp(/[:;]/, 'gi');
-    const hyphen = new RegExp(/-/, 'gi');
-    const miscRemoval = new RegExp(/[\n,.]/, 'gi');
+// function cleanHebrew(str: string) {
+//     const posuk = new RegExp(/\s[א-ת]{1,2},[א-ת]{1,2}/, 'gi');
+//     const parsha_p = new RegExp(/\s{2}{פ}/, 'gi');
+//     const parsha_s = new RegExp(/\s{2}{ס}/, 'gi');
+//     const sefer = new RegExp(/{ספר}/, 'gi');
+//     const mid = new RegExp(/[:;]/, 'gi');
+//     const hyphen = new RegExp(/-/, 'gi');
+//     const miscRemoval = new RegExp(/[\n,.]/, 'gi');
 
-    let result = str.replaceAll(posuk, constants.pos);
-    result = result.replaceAll(parsha_p, constants.prsh_p);
-    result = result.replaceAll(parsha_s, constants.prsh_s);
-    result = result.replaceAll(sefer, constants.sfr);
-    result = result.replaceAll(mid, constants.mid);
-    result = result.replaceAll(hyphen, ' ');
-    result = result.replaceAll(miscRemoval, '');
-    result = result.replace(/\s+/g, ' ');
+//     let result = str.replaceAll(posuk, constants.pos);
+//     result = result.replaceAll(parsha_p, constants.prsh_p);
+//     result = result.replaceAll(parsha_s, constants.prsh_s);
+//     result = result.replaceAll(sefer, constants.sfr);
+//     result = result.replaceAll(mid, constants.mid);
+//     result = result.replaceAll(hyphen, ' ');
+//     result = result.replaceAll(miscRemoval, '');
+//     result = result.replace(/\s+/g, ' ');
 
-    return result;
-}
+//     return result;
+// }
 
-function cleanEnglish(str: string) {
-    const chapter = new RegExp(/Chapter\s\d{1,3}/, 'gi');
-    const posuk = new RegExp(/\d{1,3}/, 'gi');
+// function cleanEnglish(str: string) {
+//     const chapter = new RegExp(/Chapter\s\d{1,3}/, 'gi');
+//     const posuk = new RegExp(/\d{1,3}/, 'gi');
 
-    let result = str.replaceAll(chapter, ' ');
-    result = result.replaceAll(posuk, constants.pos);
-    result = result.replaceAll('{P}', constants.prsh_p);
-    result = result.replaceAll('{S}', constants.prsh_s);
-    result = result.replaceAll('{B}', constants.sfr);
+//     let result = str.replaceAll(chapter, ' ');
+//     result = result.replaceAll(posuk, constants.pos);
+//     result = result.replaceAll('{P}', constants.prsh_p);
+//     result = result.replaceAll('{S}', constants.prsh_s);
+//     result = result.replaceAll('{B}', constants.sfr);
 
-    result = result.replace(/\s+/g, ' ');
-    result = result.split('').map(c => {
-        const lower = c.toLowerCase();
-        return c == lower ? c : `${constants.cap}${lower}`
-    }).join('')
+//     result = result.replace(/\s+/g, ' ');
+//     result = result.split('').map(c => {
+//         const lower = c.toLowerCase();
+//         return c == lower ? c : `${constants.cap}${lower}`
+//     }).join('')
 
-    return result;
-}
+//     return result;
+// }
 
