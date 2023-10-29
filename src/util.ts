@@ -1,10 +1,14 @@
+import { debug } from "console";
+
 const constants = {
     pos: '{_pos_}',
     prsh_p: '{_prsh_p_}',
-    prsh_s: '{_prsh_}',
+    prsh_s: '{_prsh_s_}',
     sfr: '{_sfr_}',
     mid: '{_mid_}',
     cap: '{_cap_}',
+    start: '{_start_}',
+    end: '{_end_}',
 }
 
 export function clean(str: string) {
@@ -15,6 +19,18 @@ export function clean(str: string) {
     }
 }
 
+export function simpleClean(str: string) {
+    const posuk = new RegExp(/[א-ת]{1,2},[א-ת]{1,2}/, 'gi');
+    let result = str.replaceAll(posuk, '');
+    result = result.replaceAll(/[^א-ת]/g, " ");
+    result = result.replaceAll('-', ' ');
+    const miscRemoval = new RegExp(/[\n,.;]/, 'gi');
+    result = result.replaceAll(miscRemoval, '');
+    result = result.replaceAll(/\s+/g, ' ');
+    result = result.trim();
+    result = result.replaceAll(' ', '<S><E>');
+    return `<S>${result}<E>`
+}
 
 
 export class DumbTokenizer {
@@ -26,36 +42,43 @@ export class DumbTokenizer {
         this.tokenIndex = 0;
         this.map = new Map();
         this.reverseMap = [];
-        this.tokenize(str);
+        this.buildDataSet(str);
+    }
+
+    buildDataSet(str: string) {
+        const tokens = this.tokenize(str);
+        tokens.forEach(t => this.addToMap(t));
     }
 
     decode(tokens: number[]): string {
         return tokens.map(t => this.reverseMap[t]).join('');
     }
 
-    encode(str: string): number[] {
-        return this.tokenize(str);
+    encode(str: string): (number|undefined)[] {
+        const tokens = this.tokenize(str);
+        return tokens.map(t => this.map.get(t));
     }
 
-    private tokenize(str: string): number[] {
-        const chars = str.split('')
-        const result: number[] = [];
+    private tokenize(str: string): string[] {
+        const chars = str.split('');
+        const tokens: string[] = [];
         for(let i = 0; i < chars.length; i++) {
             const char = chars[i];
             if (char == '{') {
                 const end = str.indexOf('}', i);
                 const token = str.substring(i, end + 1);
-                this.addToMap(token);
+                tokens.push(token);
+                i += token.length - 1;
+            } else if (char == '<') {
+                const end = str.indexOf('>', i);
+                const token = str.substring(i, end + 1);
+                tokens.push(token);
                 i += token.length - 1;
             } else {
-                this.addToMap(char[i]);
-                const charIndex = this.map.get(char);
-                if (typeof charIndex !== 'undefined') {
-                    result.push(charIndex);
-                }
+                tokens.push(char);
             }
         }
-        return result;
+        return tokens;
     }
 
     addToMap(str: string) {
@@ -73,23 +96,21 @@ export class DumbTokenizer {
 
 
 function cleanHebrew(str: string) {
-    const posuk = new RegExp(/[א-ת]{1,2},[א-ת]{1,2}/, 'gi');
+    const posuk = new RegExp(/\s[א-ת]{1,2},[א-ת]{1,2}/, 'gi');
     const parsha_p = new RegExp(/\s{2}{פ}/, 'gi');
     const parsha_s = new RegExp(/\s{2}{ס}/, 'gi');
-    const sefer = new RegExp(/\s{2}{ש}/, 'gi');
-    const mid = ';'
+    const sefer = new RegExp(/{ספר}/, 'gi');
+    const mid = new RegExp(/[:;]/, 'gi');
     const hyphen = new RegExp(/-/, 'gi');
-    const comma = new RegExp(/,/, 'gi');
-    const newLine = new RegExp(/\n/, 'gi');
+    const miscRemoval = new RegExp(/[\n,.]/, 'gi');
 
     let result = str.replaceAll(posuk, constants.pos);
     result = result.replaceAll(parsha_p, constants.prsh_p);
     result = result.replaceAll(parsha_s, constants.prsh_s);
     result = result.replaceAll(sefer, constants.sfr);
-    result = result.replaceAll(mid, mid);
+    result = result.replaceAll(mid, constants.mid);
     result = result.replaceAll(hyphen, ' ');
-    result = result.replaceAll(comma, '');
-    result = result.replaceAll(newLine, '');
+    result = result.replaceAll(miscRemoval, '');
     result = result.replace(/\s+/g, ' ');
 
     return result;
