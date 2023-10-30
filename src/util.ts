@@ -43,12 +43,16 @@ function simpleCleanE(str: string) {
     result = result.replaceAll('{B}', ' ');
 
     result = result.replace(/\s+/g, ' ');
+
+    result = result.toLowerCase();
     // result = result.split('').map(c => {
     //     const lower = c.toLowerCase();
     //     return c == lower ? c : `${constants.cap}${lower}`
     // }).join('')
+
+
     result = result.trim();
-    result = result.replaceAll(' ', '<S><E>');
+    result = result.replaceAll(' ', '<E><S>');
     return `<S>${result}<E>`
 }
 
@@ -81,7 +85,7 @@ export class DumbTokenizer {
         return tokens.map(t => this.map.get(t));
     }
 
-    private tokenize(str: string): string[] {
+    tokenize(str: string): string[] {
         const chars = str.split('');
         const tokens: string[] = [];
         for(let i = 0; i < chars.length; i++) {
