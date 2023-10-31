@@ -33,27 +33,23 @@ export function simpleCleanH(str: string) {
 }
 
 function simpleCleanE(str: string) {
-    const chapter = new RegExp(/Chapter\s\d{1,3}/, 'gi');
-    const posuk = new RegExp(/\d{1,3}/, 'gi');
-
-    let result = str.replaceAll(chapter, ' ');
-    result = result.replaceAll(posuk, ' ');
-    result = result.replaceAll('{P}', ' ');
-    result = result.replaceAll('{S}',  ' ');
-    result = result.replaceAll('{B}', ' ');
-
-    result = result.replace(/\s+/g, ' ');
-
-    result = result.toLowerCase();
+    let result = str.toLowerCase();
     // result = result.split('').map(c => {
     //     const lower = c.toLowerCase();
     //     return c == lower ? c : `${constants.cap}${lower}`
     // }).join('')
 
+    const miscRemoval = new RegExp(/[?,.;!\':\[\]]/, 'gi');
+    
+    result = result.replaceAll(miscRemoval, '');
+    result = result.replaceAll('-', ' ');
 
+    const special = new RegExp(/<[a-zA-Z]{2}>/, 'gi');
+    result = result.replaceAll(special, '');
+    result = result.replaceAll(/\s+/g, ' ');
     result = result.trim();
-    result = result.replaceAll(' ', '<E><S>');
-    return `<S>${result}<E>`
+    result = result.replaceAll(' ', '*');
+    return result
 }
 
 
@@ -73,6 +69,7 @@ export class DumbTokenizer {
 
     buildDataSet(str: string) {
         const tokens = this.tokenize(str);
+        tokens.sort();
         tokens.forEach(t => this.addToMap(t));
     }
 
@@ -84,6 +81,7 @@ export class DumbTokenizer {
         const tokens = this.tokenize(str);
         return tokens.map(t => this.map.get(t));
     }
+
 
     tokenize(str: string): string[] {
         const chars = str.split('');

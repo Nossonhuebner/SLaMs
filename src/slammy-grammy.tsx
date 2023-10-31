@@ -1,9 +1,7 @@
 import Hebrew from '../raw_hebrew'
 import English from '../raw_english'
 import { DumbTokenizer, clean } from './util';
-
-import { DataGrid } from '@mui/x-data-grid';
-
+import * as tf from '@tensorflow/tfjs';
 
 export function SlammyGrammy() {
     // const cleaned = clean(Hebrew)
@@ -17,36 +15,56 @@ export function SlammyGrammy() {
     const tokens = tkn.tokenize(cleaned);
     const x = tokens.slice(0, tokens.length - 1);
     const y = tokens.slice(1, tokens.length);
-    buildDict(x, y)
+    // buildDict(x, y)
 
-
+    window.tf = tf;
+    window.tensor = buildGrid(x, y, tkn);
     return (
         <div>
             <h1>Slam Grams</h1>
-            <DisplayGrid x={x} y={y} tkn={tkn} />
+            <Table x={x} y={y} tkn={tkn} />
         </div>
     );
 }
 
-function DisplayGrid({ x, y, tkn }: { x: string[], y: string[], tkn: DumbTokenizer}) {
+function sampleRow(row: number[]) {
+    const tensor = tf.tensor(row);
+    const probs = tensor.div(tensor.sum()).arraySync();
+    return tf.multinomial(probs, 1, undefined, true).arraySync()[0];
+}
+
+
+function Table({ x, y, tkn }: { x: string[], y: string[], tkn: DumbTokenizer}) {
     const grid = buildGrid(x, y, tkn)
 
-    const rows = grid.map((row, i) => {
-        const rrow: any = { id: i, name: tkn.reverseMap[i] }
-        row.forEach((v, j) => {
-            rrow[j.toString()] = v.toString();
-        })
-        return rrow;
-    });
-
-    const cols = grid[0].map((_, i) => {
-        return { field: i.toString(), headerName: tkn.reverseMap[i] }
-    })
     return (
-        <DataGrid rows={rows} columns={[{ field: 'name', headerName: 'name' }, ...cols]} style={{ background: 'wheat' }}/>
+        <table>
+            <thead>
+                <tr>
+                    <th>char</th>
+                    {/* column headers */}
+                    {grid[0].map((_, i) => <th key={i}>{tkn.reverseMap[i]}</th>)}
+                </tr>
+            </thead>
+            <tbody>
+                {grid.map((row, rowIdx) => (
+                    <tr key={rowIdx}>
+                        <td>{tkn.reverseMap[rowIdx]}</td>
+                        {grid[0].map((_, colIdx) => (
+                            <td key={`${colIdx}-${rowIdx}`}>
+                                <div>
+                                    <div>{tkn.reverseMap[rowIdx] + tkn.reverseMap[colIdx]}</div>
+                                    <div>{row[colIdx]}</div>
+                                </div>
+                            </td>
+                        ))}
+                    </tr>
+                ))}
+            </tbody>
+        </table>
     );
-
 }
+
 
 function buildDict(x: string[], y: string[]) {
     const dict = new Map<string, number>();
@@ -87,5 +105,6 @@ declare global {
         txt: string;
         dict: Map<string, number>;
         tensor: number[][];
+        tf: typeof tf;
     }
 }
