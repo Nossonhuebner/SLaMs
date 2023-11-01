@@ -1,5 +1,5 @@
 import './App.css'
-import { SlammyGrammy } from './slammy-grammy'
+import { SlammyGrammy } from './n_gram/slammy-grammy'
 
 function App() {
 
