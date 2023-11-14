@@ -28,7 +28,7 @@ export function SlammyGrammy() {
             <h1>Slam Grams</h1>
             counts: <DisplayTable grid={grid} intToChar={tkn.reverseMap} />
             normalized per row as probabilities: <DisplayTable grid={normalizedGrid} intToChar={tkn.reverseMap} />
-            {generateWords(normalizedGrid, tkn, 100).map((word, i) => <div key={i}>{word}</div>)}
+            {generateWords(normalizedGrid, tkn, 30).map((word, i) => <div key={i}>{word}</div>)}
         </div>
     );
 }
