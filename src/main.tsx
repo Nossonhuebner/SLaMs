@@ -7,13 +7,23 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import ErrorPage from "./error-page";
+import HomePage from './Home.tsx';
+import { SlammyGrammy } from './components/n_gram/slammy-grammy.tsx';
 
 const router = createBrowserRouter([
   {
-    path: "/",
+    path: "/SLaMs",
     element: <App />,
     errorElement: <ErrorPage />,
-  },
+    children: [
+    {
+      path: "/SLaMs/", index: true, element: <HomePage/>
+    },
+    {
+      path: "/SLaMs/ngrams/",element: <SlammyGrammy />
+    }
+  ]
+  }
 ]);
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

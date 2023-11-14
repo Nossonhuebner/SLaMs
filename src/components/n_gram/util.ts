@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import { DumbTokenizer } from "../util";
+import { DumbTokenizer } from "../../util";
 
 export function generateWords(grid: number[][], tkn: DumbTokenizer, n: number) {
     const words = [];

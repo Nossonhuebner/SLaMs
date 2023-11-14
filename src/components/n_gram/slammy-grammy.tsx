@@ -1,6 +1,6 @@
 // import Hebrew from '../../raw_hebrew'
-import English from '../../raw_english'
-import { DumbTokenizer, clean } from '../util';
+import English from '../../../raw_english'
+import { DumbTokenizer, clean } from '../../util';
 import * as tf from '@tensorflow/tfjs';
 import DisplayTable from './DisplayTable';
 import { buildGrid, calculateLoss, generateWords } from './util';

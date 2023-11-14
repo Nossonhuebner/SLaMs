@@ -1,13 +1,18 @@
+import { Outlet } from 'react-router-dom'
 import './App.css'
-import { SlammyGrammy } from './n_gram/slammy-grammy'
+import { Sidebar } from './Sidebar.tsx'
 
 function App() {
-
   return (
-    <>
-      <SlammyGrammy/>
-    </>
+    <div className="appContainer">
+      <Sidebar/>
+      <div className="content">
+        <Outlet />
+        </div>
+    </div>
   )
 }
 
 export default App
+
+
