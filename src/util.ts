@@ -1,15 +1,14 @@
-import { debug } from "console";
 
-const constants = {
-    pos: '{_pos_}',
-    prsh_p: '{_prsh_p_}',
-    prsh_s: '{_prsh_s_}',
-    sfr: '{_sfr_}',
-    mid: '{_mid_}',
-    cap: '{_cap_}',
-    start: '{_start_}',
-    end: '{_end_}',
-}
+// const constants = {
+//     pos: '{_pos_}',
+//     prsh_p: '{_prsh_p_}',
+//     prsh_s: '{_prsh_s_}',
+//     sfr: '{_sfr_}',
+//     mid: '{_mid_}',
+//     cap: '{_cap_}',
+//     start: '{_start_}',
+//     end: '{_end_}',
+// }
 
 export function clean(str: string) {
     if (str.match(/[א-ת]/)) {
