@@ -53,6 +53,16 @@ function simpleCleanE(str: string) {
 
 
 
+interface Tokenizer {
+    encode(str: string): (number|undefined)[];
+    decode(tokens: number[]): string;
+    tokenize(str: string): string[];
+    addToMap(str: string): void;
+    buildDataSet(str: string): void;
+    
+
+}
+
 
 export class DumbTokenizer {
     map: Map<string, number>;
@@ -73,7 +83,8 @@ export class DumbTokenizer {
     }
 
     decode(tokens: number[]): string {
-        return tokens.map(t => this.reverseMap[t]).join('');
+        const me = this;
+        return tokens.map(t => me.reverseMap[t]).join('');
     }
 
     encode(str: string): (number|undefined)[] {

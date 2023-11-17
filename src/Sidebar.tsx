@@ -24,13 +24,13 @@ export function Sidebar() {
     >
       <List>
           <ListItem disablePadding>
-            <ListItemButton component={Link} to={`/SLaMs/`}>
+            <ListItemButton component={Link} to={`/`}>
               <ListItemText primary="Home" />
             </ListItemButton>
           </ListItem>
 
           <ListItem disablePadding>
-            <ListItemButton component={Link} to={`/SLaMs/ngrams`}>
+            <ListItemButton component={Link} to={`ngrams`}>
               <ListItemText primary="N-grams" />
             </ListItemButton>
           </ListItem>
