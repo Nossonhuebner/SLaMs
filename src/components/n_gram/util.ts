@@ -56,7 +56,6 @@ export function calculateLoss(grid: number[][], x: string[], y: string[], tkn: D
     for (let i = 0; i < intX.length; i++) {
         const row = grid[intX[i]];
         const col = row[intY[i]];
-        // console.log(`${tkn.reverseMap[intX[i]]}${tkn.reverseMap[intY[i]]}: ${col}`)
         logLikelihood += Math.log(col);
         count++;
     }

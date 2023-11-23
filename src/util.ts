@@ -57,10 +57,7 @@ interface Tokenizer {
     encode(str: string): (number|undefined)[];
     decode(tokens: number[]): string;
     tokenize(str: string): string[];
-    addToMap(str: string): void;
-    buildDataSet(str: string): void;
-    
-
+    vocabulary: string[]
 }
 
 
@@ -87,9 +84,9 @@ export class DumbTokenizer {
         return tokens.map(t => me.reverseMap[t]).join('');
     }
 
-    encode(str: string): (number|undefined)[] {
+    encode(str: string): number[] {
         const tokens = this.tokenize(str);
-        return tokens.map(t => this.map.get(t));
+        return tokens.map(t => this.map.get(t) as number);
     }
 
 
