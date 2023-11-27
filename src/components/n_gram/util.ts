@@ -1,7 +1,7 @@
 import * as tf from '@tensorflow/tfjs';
-import { DumbTokenizer } from "../../util";
+import { CharacterTokenizer } from "../../util";
 
-export function generateWords(grid: number[][], tkn: DumbTokenizer, n: number) {
+export function generateWords(grid: number[][], tkn: CharacterTokenizer, n: number) {
     const words = [];
     for (let i = 0; i < n; i++) {
         words.push(generateWord(grid, tkn));
@@ -9,21 +9,21 @@ export function generateWords(grid: number[][], tkn: DumbTokenizer, n: number) {
     return words;
 }
 
-function generateWord(grid: number[][], tkn: DumbTokenizer) {
+function generateWord(grid: number[][], tkn: CharacterTokenizer) {
     const word = [];
     let next = sampleRow(grid[0]);
     while (next !== 0) {
         word.push(next);
         next = sampleRow(grid[next]);
     }
-    return word.map(i => tkn.reverseMap[i]).join('');
+    return word.map(i => tkn.vocabulary[i]).join('');
 }
 
 function sampleRow(row: number[]) {
     return tf.multinomial(row, 1, undefined, true).arraySync()[0] as number;
 }
  
-export function buildGrid(x: string[], y: string[], tkn: DumbTokenizer, normalized?: boolean) {
+export function buildGrid(x: string[], y: string[], tkn: CharacterTokenizer, normalized?: boolean) {
     let grid = [];
 
     for (let i = 0; i < tkn.map.size; i++) {
@@ -47,7 +47,7 @@ export function buildGrid(x: string[], y: string[], tkn: DumbTokenizer, normaliz
     return grid;
 }
 
-export function calculateLoss(grid: number[][], x: string[], y: string[], tkn: DumbTokenizer) {
+export function calculateLoss(grid: number[][], x: string[], y: string[], tkn: CharacterTokenizer) {
     const intX = x.map(char => tkn.map.get(char) as number);
     const intY = y.map(char => tkn.map.get(char) as number);
 

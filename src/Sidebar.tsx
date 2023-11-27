@@ -34,6 +34,12 @@ export function Sidebar() {
               <ListItemText primary="N-grams" />
             </ListItemButton>
           </ListItem>
+
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to={`mlp`}>
+              <ListItemText primary="Multi-Layer Perceptron" />
+            </ListItemButton>
+          </ListItem>
       </List>
       <GhLink repositoryLink="https://github.com/Nossonhuebner/SLaMs"/>
     </Drawer>

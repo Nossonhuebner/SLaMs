@@ -1,6 +1,6 @@
 // import Hebrew from '../../raw_hebrew'
 import English from '../../../raw_english'
-import { DumbTokenizer, clean } from '../../util';
+import { CharacterTokenizer, clean } from '../../util';
 import * as tf from '@tensorflow/tfjs';
 import DisplayTable from './DisplayTable';
 import { buildGrid, calculateLoss, generateWords } from './util';
@@ -10,7 +10,7 @@ import { useState } from 'react';
 export function SlammyGrammy() {
     const cleaned = clean(English);
     const [n, setN] = useState<number>()
-    const tkn = new DumbTokenizer(cleaned);
+    const tkn = new CharacterTokenizer(cleaned);
 
     const tokens = tkn.tokenize(cleaned);
     const x = tokens.slice(0, tokens.length - 1);
@@ -48,7 +48,7 @@ export function SlammyGrammy() {
 
 declare global {
     interface Window {
-        tkn: DumbTokenizer;
+        tkn: CharacterTokenizer;
         txt: string;
         tensor: number[][];
         tf: typeof tf;

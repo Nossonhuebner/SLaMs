@@ -53,7 +53,7 @@ function simpleCleanE(str: string) {
 
 
 
-interface Tokenizer {
+export interface ITokenizer {
     encode(str: string): (number|undefined)[];
     decode(tokens: number[]): string;
     tokenize(str: string): string[];
@@ -61,15 +61,15 @@ interface Tokenizer {
 }
 
 
-export class DumbTokenizer {
+export class CharacterTokenizer implements ITokenizer {
     map: Map<string, number>;
-    reverseMap: string[];
+    vocabulary: string[];
     tokenIndex: number;
     counts: {[key: string]: number} = {};
     constructor(str: string) {
         this.tokenIndex = 0;
         this.map = new Map();
-        this.reverseMap = [];
+        this.vocabulary = [];
         this.buildDataSet(str);
     }
 
@@ -81,7 +81,7 @@ export class DumbTokenizer {
 
     decode(tokens: number[]): string {
         const me = this;
-        return tokens.map(t => me.reverseMap[t]).join('');
+        return tokens.map(t => me.vocabulary[t]).join('');
     }
 
     encode(str: string): number[] {
@@ -116,7 +116,7 @@ export class DumbTokenizer {
         if (!this.map.has(str)) {
             this.counts[str] = 0;
             this.map.set(str, this.tokenIndex);
-            this.reverseMap.push(str);
+            this.vocabulary.push(str);
             this.tokenIndex++;
         }
         this.counts[str]++;

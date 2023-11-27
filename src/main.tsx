@@ -9,6 +9,7 @@ import {
 import ErrorPage from "./error-page";
 import HomePage from './Home.tsx';
 import { SlammyGrammy } from './components/n_gram/slammy-grammy.tsx';
+import MLP from './components/mlp/mlp.tsx';
 
 const router = createHashRouter([
   {
@@ -21,6 +22,9 @@ const router = createHashRouter([
     },
     {
       path: "ngrams", element: <SlammyGrammy />
+    },
+    {
+      path: "mlp", element: <MLP/>
     }
   ]
   }
