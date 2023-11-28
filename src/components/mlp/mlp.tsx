@@ -3,31 +3,66 @@ import { CharacterTokenizer, ITokenizer, clean } from "../../util";
 import English from '../../../raw_english'
 import { Value } from "../../util/engine";
 import { MLP as Net, softmax } from "../../util/nn";
+import * as tf from '@tensorflow/tfjs';
+import { Button, TextField, CircularProgress } from '@mui/material'
 
 export function MLP() {
     const cleaned = clean(English);
-    const sample = cleaned.slice(0, 2000)
+    const sample = cleaned.slice(0, cleaned.length)
     const tkn = new CharacterTokenizer(sample);
-    const embeddingSize = 3;
-    const contextLength = 4;
+    const [lr, setLr] = useState(0.001);
 
+    const [contextLength, setContextLength] = useState(3);
+    const [embeddingSize, setEmbeddingSize] = useState(2);
+    const [running, setRunning] = useState(false)
     const embeddings = useMemo(() => createEmbeddings(tkn, embeddingSize), []);
-    const net = useMemo(() => new Net(embeddingSize * contextLength, [tkn.vocabulary.length]), []);
 
-    const {training, validation } = createDataset(sample, contextLength, tkn);
+    const net = useMemo(() => {
+        return new Net(embeddingSize * contextLength, [tkn.vocabulary.length])
+    }, [embeddingSize, contextLength, tkn]);
 
-    // const [lr, setLr] = useState(0.001);
-    // const [loss, setLoss] = useState(0);
-    // const [accuracy, setAccuracy] = useState(0);
+    const { training, validation } = createDataset(sample, contextLength, tkn);
 
-    // const [epoch, setEpoch] = useState(0);
-    for(let i = 0; i < 10; i++) {
-        train(net, training, embeddings, 0.01);
-        valid(net, validation, embeddings);
+
+
+    const [epochs, setEpochs] = useState(0);
+
+
+    const generate = () => {
+        const a = generateWords(10, net, tkn, contextLength, embeddings);
+        console.log(a);    
     }
 
-    const a = generateWords(10, net, tkn, contextLength, embeddings);
-    console.log(a);
+    const run = () => {
+        setRunning(true)
+        runEpocs(net, training, validation, embeddings, lr, epochs, () => {
+            setRunning(false)
+        })
+    }
+
+    return (
+        <>
+            <TextField value={lr} onChange={e => setLr(parseFloat(e.target.value))}>a</TextField>
+            <TextField value={contextLength} onChange={e => setContextLength(parseInt(e.target.value))} >b</TextField>
+            <TextField value={embeddingSize} onChange={e => setEmbeddingSize(parseInt(e.target.value))} >c</TextField>
+            <TextField value={epochs} onChange={e => setEpochs(parseInt(e.target.value))} ></TextField>
+
+            <Button onClick={run}>
+                {running ? <CircularProgress/> : 'run epocs'}
+            </Button>
+            <Button onClick={generate}>
+                generate
+            </Button>
+        </>
+    )
+}
+
+function runEpocs(net: Net, training: DataItem[], validation: DataItem[], embeddings: Value[][], lr: number, epochs: number, callBack: () => void) {
+    for(let i = 0; i < epochs; i++) {
+        train(net, training, embeddings, lr);
+        valid(net, validation, embeddings);
+    }
+    callBack()
 }
 
 export function generateWords(n: number, net: Net, tkn: CharacterTokenizer, contextLength: number, embeddings: Value[][]) {
@@ -39,6 +74,7 @@ export function generateWords(n: number, net: Net, tkn: CharacterTokenizer, cont
 }
 
 function generateWord(net: Net, tkn: CharacterTokenizer, contextLength: number, embeddings: Value[][]) {
+    debugger
     let base = "*".repeat(contextLength);
     const chars = [];
     let next = null;
@@ -47,12 +83,16 @@ function generateWord(net: Net, tkn: CharacterTokenizer, contextLength: number, 
         const embs = getEmbeddings(input, embeddings);
         const logits = net.forward(embs.flat());
         const probs = softmax(logits);
-        const idx = probs.map(v => v.data).indexOf(Math.max(...probs.map(v => v.data)));
+        const idx = sampleProb(probs.map(v => v.data));
         next = tkn.decode([idx]);
         chars.push(next);
         base = base.slice(1) + next;
     }
     return chars.join('');
+}
+
+function sampleProb(row: number[]) {
+    return tf.multinomial(row, 1, undefined, true).arraySync()[0] as number;
 }
 
 
