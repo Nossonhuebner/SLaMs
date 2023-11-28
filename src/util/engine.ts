@@ -2,10 +2,6 @@ function asValue(val: number | Value) {
     return typeof val === 'number' ? new Value(val) : val;
 }
 
-const uniqueId = (length=16) => {
-    return Math.ceil(Math.random() * Date.now()).toPrecision(length).toString().replace(".", "")
-  }
-
 export enum Ops {
     Init = '',
     Plus = '+',

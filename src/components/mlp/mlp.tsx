@@ -8,12 +8,12 @@ import { Button, TextField, CircularProgress } from '@mui/material'
 
 export function MLP() {
     const cleaned = clean(English);
-    const sample = cleaned.slice(0, cleaned.length)
-    const tkn = new CharacterTokenizer(sample);
+    const tkn = new CharacterTokenizer("*abcdefghijklmnopqrstuvwxyz");
     const [lr, setLr] = useState(0.001);
 
     const [contextLength, setContextLength] = useState(3);
     const [embeddingSize, setEmbeddingSize] = useState(2);
+    const [textLength, setTextLength] = useState(1000);
     const [running, setRunning] = useState(false)
     const embeddings = useMemo(() => createEmbeddings(tkn, embeddingSize), []);
 
@@ -21,9 +21,9 @@ export function MLP() {
         return new Net(embeddingSize * contextLength, [tkn.vocabulary.length])
     }, [embeddingSize, contextLength, tkn]);
 
+    const sample = cleaned.slice(0, textLength)
+
     const { training, validation } = createDataset(sample, contextLength, tkn);
-
-
 
     const [epochs, setEpochs] = useState(0);
 
@@ -42,10 +42,11 @@ export function MLP() {
 
     return (
         <>
-            <TextField value={lr} onChange={e => setLr(parseFloat(e.target.value))}>a</TextField>
-            <TextField value={contextLength} onChange={e => setContextLength(parseInt(e.target.value))} >b</TextField>
-            <TextField value={embeddingSize} onChange={e => setEmbeddingSize(parseInt(e.target.value))} >c</TextField>
-            <TextField value={epochs} onChange={e => setEpochs(parseInt(e.target.value))} ></TextField>
+            lr:<TextField value={lr} onChange={e => setLr(parseFloat(e.target.value))}/>
+            context:<TextField value={contextLength} onChange={e => setContextLength(parseInt(e.target.value))}/>
+            emb:<TextField value={embeddingSize} onChange={e => setEmbeddingSize(parseInt(e.target.value))}/>
+            epochs:<TextField value={epochs} onChange={e => setEpochs(parseInt(e.target.value))}/>
+            textLength:<TextField value={textLength} onChange={e => setTextLength(parseInt(e.target.value))}/>
 
             <Button onClick={run}>
                 {running ? <CircularProgress/> : 'run epocs'}
