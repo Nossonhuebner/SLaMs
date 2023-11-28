@@ -25,8 +25,8 @@ export class Value {
     _parents: Value[];
 
     // used for rendering and does not belong here at all!: 
-    id: string;
-    displayContributors: Value[]=[];
+    // id: string;
+    // displayContributors: Value[]=[];
     op: Ops;
 
 
@@ -36,7 +36,7 @@ export class Value {
         this.op = op;
         this.grad = 0.0;
 
-        this.id = uniqueId();
+        // this.id = uniqueId();
     }
 
     plus(other: number | Value) {
