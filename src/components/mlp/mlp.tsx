@@ -7,6 +7,7 @@ import * as tf from '@tensorflow/tfjs';
 import { Button, TextField, CircularProgress } from '@mui/material'
 
 export function MLP() {
+    window.tf = tf;
     const cleaned = clean(English);
     const tkn = new CharacterTokenizer("*abcdefghijklmnopqrstuvwxyz");
     const [lr, setLr] = useState(0.001);
