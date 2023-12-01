@@ -76,7 +76,6 @@ export function generateWords(n: number, net: Net, tkn: CharacterTokenizer, cont
 }
 
 function generateWord(net: Net, tkn: CharacterTokenizer, contextLength: number, embeddings: Value[][]) {
-    debugger
     let base = "*".repeat(contextLength);
     const chars = [];
     let next = null;
