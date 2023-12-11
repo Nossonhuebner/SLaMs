@@ -28,7 +28,7 @@ const router = createHashRouter([
       path: "mlp", element: <MLP/>
     },
     {
-      path: "mlp-v2", element: TfMlp
+      path: "mlp-v2", element: <TfMlp/>
     }
   ]
   }
