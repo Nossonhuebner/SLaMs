@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.0",
     "@mui/x-data-grid": "^6.17.0",
     "@tensorflow/tfjs": "^4.12.0",
     "react": "^18.2.0",

@@ -2,93 +2,63 @@ import { clean } from "../../util"
 import English from '../../../raw_english'
 import * as tf from '@tensorflow/tfjs';
 import { useMemo, useState } from "react";
-import { Button } from "@mui/material";                 
-
-class TokenizerLite {
-    map: Map<string, number>
-    iToS: string[]
-    constructor() {
-        const chars = "*abcdefghijklmnopqrstuvwxyz.".split('')
-        this.map = new Map<string, number>()
-        this.iToS = chars
-        for(let i = 0; i < chars.length; i++) {
-            this.map.set(chars[i],  i)
-        }
-    }
-
-    encode(str: string|string[]): number[] {
-        // assumes string[] is already split...
-        const val = typeof(str) === 'string' ? str.split('') : str
-        return val.map(char => this.map.get(char) as number)
-    }
-
-    decode(vals: number[]): string {
-        return vals.map(v => this.iToS[v]).join('')
-    }
-
-    get vocab() {
-        return this.iToS;
-    }
-}
-
-const embeddingSize = 30; // Size of the output embedding vector
-const contextLength = 5; // Length of each input sequence ()
-const batchSize = 640; // Number of sequences in a batch
-
-const lr = 0.001
+import { Button, Grid, TextField,Tooltip, IconButton} from "@mui/material";
+import InfoIcon from '@mui/icons-material/Info';              
+import './styles.css'
+import { createDataset, predictSequences } from "./util";
+import { CharTokenizerLite } from "./tokenizers";
 
 function TfMlp() {
-    const tokenizer = new TokenizerLite();
+    const [lr, setLr] = useState(0.001);
+    const [batchSize, setBatchSize] = useState(640);
+    const [contextLength, setContextLength] = useState(4);  // Length of each input sequence
+    const [embeddingSize, setEmbeddingSize] = useState(30);
+    const [sampleSize, setSampleSize] = useState(40000);
+    const [epochs, setEpochs] = useState(30);
+
+    const tokenizer = new CharTokenizerLite();
     const cleaned = clean(English);
-    console.log(cleaned.length)
-    const sample = cleaned.slice(0, 30000);
+    const sample = cleaned.slice(0, sampleSize);
     const tokens = tokenizer.encode(sample);
     const [generated, setGenerated] = useState<string[]>([]);
 
-    const inputDim = tokenizer.vocab.length+1 // Size of the vocabulary
-
-
-    const d = createDataset2(tokens, contextLength)
-    tf.util.shuffle(d);
-    const inn = d.map(item => item.input);
-    const out = d.map(item => item.output);
+    const inputDim = tokenizer.vocab.length
+    const dataset = createDataset(tokens, contextLength)
+    const X = dataset.map(item => item.input);
+    const Y = dataset.map(item => item.output);
 
     const model = useMemo(() => {
         const m = tf.sequential();
 
-        // Add an embedding layer
         m.add(tf.layers.embedding({
             inputDim: inputDim, // vocabulary size
             outputDim: embeddingSize, // embedding size
             inputLength: contextLength // context size
-        }));
+        })); // [batchSize, contextSize] => [batchSize, contextSize, embeddingSize]
 
-        // Flatten the output from the embedding layer
-        m.add(tf.layers.flatten());
-        m.add(tf.layers.dense({ units: 64, activation: 'relu' }));
-        m.add(tf.layers.dense({ units: 28, activation: 'softmax' }));
+        m.add(tf.layers.flatten()); // [batchSize, contextSize, embeddingSize] => [batchSize, contextSize * embeddingSize]
 
+        m.add(tf.layers.dense({ units: 64, activation: 'relu' })); // [batchSize, contextSize * embeddingSize] => [batchSize, 64]
+
+        m.add(tf.layers.dense({ units: tokenizer.vocab.length, activation: 'softmax' })); // [batchSize, 64] => [batchSize, vocabularySize]
 
         m.compile({
             optimizer:  tf.train.adam(lr) ,
             loss: 'categoricalCrossentropy',
             metrics: ['accuracy']
         });
-
+        m.summary()
         return m;
     }, [inputDim, embeddingSize, contextLength]);
 
-
-
-    model.summary()
-    const oneHotLabels = tf.oneHot(out, tokenizer.vocab.length);
-
+    const oneHotLabels = tf.oneHot(Y, tokenizer.vocab.length);
     const train = () => {
-        model.fit(tf.tensor2d(inn, [inn.length, contextLength]), oneHotLabels, {
-            epochs: 30,        // Number of epochs to train the model
-            validationSplit: 0.2,  // Fraction of the training data to be used as validation data
+        model.fit(tf.tensor2d(X, [X.length, contextLength]), oneHotLabels, {
+            epochs: epochs,
+            validationSplit: 0.2,
             batchSize: batchSize,
-            callbacks: {       // Callbacks to execute during training
+            shuffle: true,
+            callbacks: {
               onEpochEnd: (epoch, logs) => {
                 console.log(logs)
                 console.log(`Epoch ${epoch + 1}: Loss: ${logs?.loss}, Val_Accuracy: ${logs?.val_acc}`);
@@ -98,62 +68,38 @@ function TfMlp() {
     
     }
 
+    const addGenerated = (str: string) => {
+        setGenerated(s => [...s, str]);
+    }
 
     return (
         <>
-            <div>Hi there</div>
-            <Button onClick={train}>train</Button>
-            <Button onClick={() => predictWords(tokenizer ,model, 10, generated, setGenerated)}>generate</Button>
+            <Grid container className="inputContainer">
+                <Grid item xs={6}><TextField label={`Sample Size (max ${cleaned.length.toLocaleString('en-US')})`} value={sampleSize} onChange={e => setSampleSize(parseInt(e.target.value))} /></Grid>
+                <Grid item xs={6}><TextField label="Batch Size" value={batchSize} onChange={e => setBatchSize(parseInt(e.target.value))} /></Grid>
+                
+
+                <Grid item xs={6}><TextField label="Context Length" value={contextLength} onChange={e => setContextLength(parseInt(e.target.value))} /></Grid>
+                <Grid item xs={6}><TextField label="Embedding Size" value={embeddingSize} onChange={e => setEmbeddingSize(parseInt(e.target.value))} /></Grid>
+                
+                <Grid item xs={6}><TextField label="Learning Rate" value={lr} onChange={e => setLr(parseFloat(e.target.value))} /></Grid>
+                <Grid item xs={6}><TextField label="Epochs" value={epochs} onChange={e => setEpochs(parseInt(e.target.value))} /></Grid>
+            </Grid>
+            <Button onClick={train}>
+                <Tooltip title="Training deets in console">
+                    <IconButton>
+                    <InfoIcon />
+                    </IconButton>
+                </Tooltip>
+                Train!
+            </Button>
+            <Button onClick={() => predictSequences(tokenizer ,model, 10, contextLength, addGenerated)}>Generate!</Button>
             {generated.map((g, i) => <div key={i}>{g}</div>)}
         </>
     )
 }
 
-function predictWords(tokenizer: TokenizerLite, model: tf.Sequential, count: number, words: string[], setWords: React.Dispatch<React.SetStateAction<string[]>>) { // pass in words array to allow interface to updated as each word is generated
-    for (let i = 0; i < count; i++) {
-        setWords([...words, predictWord(tokenizer, model)])
-    }
-}
-
-function predictWord(tokenizer: TokenizerLite, model: tf.Sequential) {
-    let output = ''
-    let input = "*".repeat(contextLength)
-    const result = []
-    while (output !== '*') {
-        result.push(output)
-        output = predict(input, tokenizer, model)
-        input = input.slice(1) + output
-    }
-    return result.join('')
-}
 
 
-function predict(str: string, tokenizer: TokenizerLite, model: tf.Sequential) {
-    const enc = tokenizer.encode(str);
-    const inputTensor = tf.tensor2d([enc], [1, contextLength]);
-    const prediction = model.predict(inputTensor) as tf.Tensor;  
-    const values = prediction.arraySync() as number[][];
-    
-    const result = tf.multinomial(values, 1, undefined, true).arraySync()[0] as number;
-    return tokenizer.decode([result]);
-}
-
-type DataItem = {
-    input: number[];
-    output: number;
-}
-
-
-function createDataset2(tokens: number[], contextLength: number) {
-    const r = new Array<DataItem>();
-
-    for (let i = 0; i < tokens.length - contextLength; i++) {
-        const input = tokens.slice(i, i + contextLength) as number[];
-        const output = tokens[i + contextLength] as number;
-        const item = { input, output };
-        r.push(item);
-    }
-    return r;
-}
 
 export default TfMlp;

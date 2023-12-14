@@ -1,0 +1,10 @@
+.inputContainer.MuiGrid-container {
+    background: peachpuff;
+    padding: 16px;
+    border-radius: 8px;
+    width: 30%;
+}
+
+.inputContainer .MuiTextField-root {
+    padding: 10px;
+}
