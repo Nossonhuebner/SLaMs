@@ -10,7 +10,7 @@ import ErrorPage from "./error-page";
 import HomePage from './Home.tsx';
 import { SlammyGrammy } from './components/n_gram/slammy-grammy.tsx';
 import MLP from './components/mlp/mlp.tsx';
-import TfMlp from './components/mlp_v2/tf_mlp.tsx';
+import TfMlp from './components/mlp/tf_mlp.tsx';
 import WaveNet from './components/wavenet/wavenet.tsx';
 import Transformer from './components/transformer/transformer.tsx';
 

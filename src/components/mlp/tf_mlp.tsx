@@ -5,8 +5,8 @@ import { useMemo, useState } from "react";
 import { Button, Grid, TextField,Tooltip, IconButton} from "@mui/material";
 import InfoIcon from '@mui/icons-material/Info';              
 import './styles.css'
-import { createDataset, predictSequences } from "./util";
-import { CharTokenizerLite } from "./tokenizers";
+import { createDataset, predictSequences } from "../../util/util";
+import { CharTokenizerLite } from "../../util/tokenizers";
 
 function TfMlp() {
     const [lr, setLr] = useState(0.001);
