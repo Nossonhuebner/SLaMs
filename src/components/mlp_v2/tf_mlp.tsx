@@ -34,13 +34,13 @@ function TfMlp() {
             inputDim: inputDim, // vocabulary size
             outputDim: embeddingSize, // embedding size
             inputLength: contextLength // context size
-        })); // [batchSize, contextSize] => [batchSize, contextSize, embeddingSize]
+        })); // [(batchSize), contextSize] => [(batchSize), contextSize, embeddingSize]
 
-        m.add(tf.layers.flatten()); // [batchSize, contextSize, embeddingSize] => [batchSize, contextSize * embeddingSize]
+        m.add(tf.layers.flatten()); // [(batchSize), contextSize, embeddingSize] => [(batchSize), contextSize * embeddingSize]
 
-        m.add(tf.layers.dense({ units: 64, activation: 'relu' })); // [batchSize, contextSize * embeddingSize] => [batchSize, 64]
+        m.add(tf.layers.dense({ units: 64, activation: 'relu' })); // [(batchSize), contextSize * embeddingSize] => [(batchSize), 64]
 
-        m.add(tf.layers.dense({ units: tokenizer.vocab.length, activation: 'softmax' })); // [batchSize, 64] => [batchSize, vocabularySize]
+        m.add(tf.layers.dense({ units: tokenizer.vocab.length, activation: 'softmax' })); // [(batchSize), 64] => [(batchSize), vocabularySize]
 
         m.compile({
             optimizer:  tf.train.adam(lr) ,
