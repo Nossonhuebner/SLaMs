@@ -45,6 +45,16 @@ export function Sidebar() {
               <ListItemText primary="Multi-Layer Perceptron V2 (tf)" />
             </ListItemButton>
           </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to={`wavenet`}>
+              <ListItemText primary="WaveNet" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to={`transformer`}>
+              <ListItemText primary="Transformer" />
+            </ListItemButton>
+          </ListItem>
       </List>
       <GhLink repositoryLink="https://github.com/Nossonhuebner/SLaMs"/>
     </Drawer>
