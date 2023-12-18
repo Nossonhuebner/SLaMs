@@ -1,53 +1,67 @@
 import { useMemo, useState } from "react";
-import { CharacterTokenizer, ITokenizer, clean } from "../../util";
+import { clean } from "../../util";
 import English from '../../../raw_english'
 import { Value } from "../../util/engine";
 import { MLP as Net, softmax } from "../../util/nn";
 import * as tf from '@tensorflow/tfjs';
-import { Button, TextField, CircularProgress } from '@mui/material'
+import { Button, Grid, TextField, CircularProgress } from '@mui/material'
+import { CharTokenizerLite, ITokenizerLite } from "../../util/tokenizers";
+import { DataItem, createDataset } from "../../util/util";
+
+import './styles.css'
 
 export function MLP() {
     window.tf = tf;
-    const cleaned = clean(English);
-    const tkn = new CharacterTokenizer("*abcdefghijklmnopqrstuvwxyz");
-    const [lr, setLr] = useState(0.001);
 
-    const [contextLength, setContextLength] = useState(3);
-    const [embeddingSize, setEmbeddingSize] = useState(2);
-    const [textLength, setTextLength] = useState(1000);
+
+    const [lr, setLr] = useState(0.1);
+    const [batchSize, setBatchSize] = useState(2000);
+    const [contextLength, setContextLength] = useState(5);  // Length of each input sequence
+    const [embeddingSize, setEmbeddingSize] = useState(30);
+    const [sampleSize, setSampleSize] = useState(2000);
+    const [epochs, setEpochs] = useState(20);
+
+    const tokenizer = useMemo(() => new CharTokenizerLite(), []);
+    const cleaned = clean(English);
+    const sample = cleaned.slice(0, sampleSize);
+    const tokens = tokenizer.encode(sample);
+    // const [generated, setGenerated] = useState<string[]>([]);
+
+    const dataset = createDataset(tokens, contextLength)
+    
     const [running, setRunning] = useState(false)
-    const embeddings = useMemo(() => createEmbeddings(tkn, embeddingSize), []);
+    const embeddings = useMemo(() => createEmbeddings(tokenizer, embeddingSize), []);
 
     const net = useMemo(() => {
-        return new Net(embeddingSize * contextLength, [tkn.vocabulary.length])
-    }, [embeddingSize, contextLength, tkn]);
-
-    const sample = cleaned.slice(0, textLength)
-
-    const { training, validation } = createDataset(sample, contextLength, tkn);
-
-    const [epochs, setEpochs] = useState(0);
+        return new Net(embeddingSize * contextLength, [tokenizer.vocab.length])
+    }, [embeddingSize, contextLength, tokenizer]);
 
 
     const generate = () => {
-        const a = generateWords(10, net, tkn, contextLength, embeddings);
+        const a = generateWords(10, net, tokenizer, contextLength, embeddings);
         console.log(a);    
     }
 
     const run = () => {
         setRunning(true)
-        runEpocs(net, training, validation, embeddings, lr, epochs, () => {
+        runEpocs(net, dataset, embeddings, lr, epochs, batchSize, () => {
             setRunning(false)
         })
     }
 
     return (
         <>
-            lr:<TextField value={lr} onChange={e => setLr(parseFloat(e.target.value))}/>
-            context:<TextField value={contextLength} onChange={e => setContextLength(parseInt(e.target.value))}/>
-            emb:<TextField value={embeddingSize} onChange={e => setEmbeddingSize(parseInt(e.target.value))}/>
-            epochs:<TextField value={epochs} onChange={e => setEpochs(parseInt(e.target.value))}/>
-            textLength:<TextField value={textLength} onChange={e => setTextLength(parseInt(e.target.value))}/>
+            <Grid container className="inputContainer">
+                <Grid item xs={6}><TextField label={`Sample Size (max ${cleaned.length.toLocaleString('en-US')})`} value={sampleSize} onChange={e => setSampleSize(parseInt(e.target.value))} /></Grid>
+                <Grid item xs={6}><TextField label="Batch Size" value={batchSize} onChange={e => setBatchSize(parseInt(e.target.value))} /></Grid>
+                
+
+                <Grid item xs={6}><TextField label="Context Length" value={contextLength} onChange={e => setContextLength(parseInt(e.target.value))} /></Grid>
+                <Grid item xs={6}><TextField label="Embedding Size" value={embeddingSize} onChange={e => setEmbeddingSize(parseInt(e.target.value))} /></Grid>
+                
+                <Grid item xs={6}><TextField label="Learning Rate" value={lr} onChange={e => setLr(parseFloat(e.target.value))} /></Grid>
+                <Grid item xs={6}><TextField label="Epochs" value={epochs} onChange={e => setEpochs(parseInt(e.target.value))} /></Grid>
+            </Grid>
 
             <Button onClick={run}>
                 {running ? <CircularProgress/> : 'run epocs'}
@@ -59,15 +73,21 @@ export function MLP() {
     )
 }
 
-function runEpocs(net: Net, training: DataItem[], validation: DataItem[], embeddings: Value[][], lr: number, epochs: number, callBack: () => void) {
+function runEpocs(net: Net, dataset: DataItem[], embeddings: Value[][], lr: number, epochs: number, batchSize: number, callBack: () => void) {
     for(let i = 0; i < epochs; i++) {
-        train(net, training, embeddings, lr);
-        valid(net, validation, embeddings);
+        const [training, validation] = split(shuffle(dataset));
+        console.log('epoch:', i);
+        batch(training, batchSize).forEach(batch => {
+            train(net, batch, embeddings, lr);
+        })
+        batch(validation, batchSize).forEach(batch => {
+            valid(net, batch, embeddings);
+        })
     }
     callBack()
 }
 
-export function generateWords(n: number, net: Net, tkn: CharacterTokenizer, contextLength: number, embeddings: Value[][]) {
+export function generateWords(n: number, net: Net, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
     const words = [];
     for (let i = 0; i < n; i++) {
         words.push(generateWord(net, tkn, contextLength, embeddings));
@@ -75,7 +95,7 @@ export function generateWords(n: number, net: Net, tkn: CharacterTokenizer, cont
     return words;
 }
 
-function generateWord(net: Net, tkn: CharacterTokenizer, contextLength: number, embeddings: Value[][]) {
+function generateWord(net: Net, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
     let base = "*".repeat(contextLength);
     const chars = [];
     let next = null;
@@ -107,40 +127,15 @@ function valid(net: Net, data: DataItem[], embeddings: Value[][]) {
         const logits = net.forward(embs.flat());
         const probs = softmax(logits);
 
-        const yIdx = output[0];
+        const yIdx = output;
         const probVals = probs.map(v => v.data);
         const maxProb = Math.max(...probVals)
         const predIdx = probVals.indexOf(maxProb);
-        item.preds = probVals;
         correct += Number(yIdx == predIdx);
     })
     const accuracy = correct / count
     console.log('accuracy:', accuracy);
     return accuracy;
-}
-
-type DataItem = {
-    input: number[],
-    output: number[],
-    loss?: number,
-    preds?: number[]
-}
-
-function createDataset(data: string, contextLength: number, tokenizer: ITokenizer) {
-    const training = new Array<DataItem>();
-    const validation = new Array<DataItem>();
-
-    for (let i = 0; i < data.length - contextLength; i++) {
-        const input = tokenizer.encode(data.slice(i, i + contextLength)) as number[];
-        const output = tokenizer.encode(data[i + contextLength]) as number[];
-        const item = { input, output };
-        if (Math.random() > 0.8) {
-            validation.push(item);
-        } else {
-            training.push(item);
-        }
-    }
-    return { training, validation };
 }
 
 function getEmbeddings(input: number[], embeddings: Value[][]) {
@@ -162,21 +157,28 @@ function train(net: Net, data: DataItem[], embeddings: Value[][], lr: number) {
         const logits = net.forward(embs.flat());
         const probs = softmax(logits);
 
-        const loss = probs[output[0]].negativeLogLikelihood()
-        item.loss = loss.data;
+        const loss = probs[output].negativeLogLikelihood()
         aggLoss = aggLoss.plus(loss);
-
     })
     //backward
     net.parameters.forEach(p => p.grad = 0);
     aggLoss = aggLoss.divide(count);
     aggLoss.backward()
 
-    net.parameters.forEach(p => p.data += -lr * clipGradient(p.grad, -10, 10))
+    net.parameters.forEach(p => p.data += -lr * clipGradient(p.grad, -5, 5))
 
     // const avg =  aggLoss / count;
     console.log('avgLoss:', aggLoss.data);
     return aggLoss.data;
+}
+
+function batch<T>(array: T[], batchSize: number = 64) {
+    const batches = [];
+    for (let i = 0; i < array.length; i += batchSize) {
+        batches.push(array.slice(i, i + batchSize));
+    }
+
+    return batches;
 }
 
 function clipGradient(grad: number, min: number, max: number) {
@@ -186,9 +188,9 @@ function clipGradient(grad: number, min: number, max: number) {
 }
 
 
-function createEmbeddings(tkn: ITokenizer, embSize: number) {
+function createEmbeddings(tkn: ITokenizerLite, embSize: number) {
     const embeddings: Value[][] = [];
-    for(let i = 0; i < tkn.vocabulary.length; i++) {
+    for(let i = 0; i < tkn.vocab.length; i++) {
         const emb: Value[] = []
         for(let j = 0; j < embSize; j++) {
             emb.push(new Value(Math.random()))
@@ -197,6 +199,27 @@ function createEmbeddings(tkn: ITokenizer, embSize: number) {
     }
 
     return embeddings;
+}
+
+function shuffle<T>(array: T[]) {
+    let currentIndex = array.length,  randomIndex;
+  
+    while (currentIndex > 0) {
+        randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex--;
+  
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex], array[currentIndex]];
+    }
+  
+    return array;
+}
+
+function split<T>(array: T[], ratio: number = .8) {
+    const splitIdx = Math.floor(array.length * ratio);
+    const train = array.slice(0, splitIdx);
+    const valid = array.slice(splitIdx);
+    return [train, valid];
 }
 
 export default MLP

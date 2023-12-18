@@ -29,21 +29,19 @@ export function predictSequences(tokenizer: ITokenizerLite, model: tf.Sequential
 }
 
 export function predictSequence(tokenizer: ITokenizerLite, model: tf.Sequential, contextLength: number) {
-    let output = ''
-    let input = "*".repeat(contextLength)
-    const result = []
-    while (output !== '*') {
-        result.push(output)
-        const outputToken = predictToken(input, tokenizer, model)
-        output = tokenizer.decode([outputToken]);
-        input = input.slice(1) + output
+    let output: number | null = null
+    let input = tokenizer.encode("*".repeat(contextLength))
+    const result: number[] = []
+    while (output !== tokenizer.specialToken) {
+        result.push(tokenizer.specialToken)
+        output = predictToken(input, model)
+        input = [...input.slice(1), output]
     }
-    return result.join('')
+    return tokenizer.decode(result)
 }
 
-export function predictToken(str: string, tokenizer: ITokenizerLite, model: tf.Sequential) {
-    const enc = tokenizer.encode(str);
-    const inputTensor = tf.tensor2d([enc], [1, str.length]);
+export function predictToken(inputTokens: number[], model: tf.Sequential) {
+    const inputTensor = tf.tensor2d([inputTokens], [1, inputTokens.length]);
     const prediction = model.predict(inputTensor) as tf.Tensor;  
     const values = prediction.arraySync() as number[][];
     

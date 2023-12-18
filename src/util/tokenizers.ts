@@ -1,13 +1,14 @@
-
 export interface ITokenizerLite {
     encode(str: string|string[]): number[];
     decode(vals: number[]): string;
     vocab: string[];
+    specialToken: number;
 }
 
 export class CharTokenizerLite implements ITokenizerLite {
     map: Map<string, number>
     iToS: string[]
+    _specialToken: number
     constructor() {
         const chars = "*abcdefghijklmnopqrstuvwxyz.".split('')
         this.map = new Map<string, number>()
@@ -15,6 +16,7 @@ export class CharTokenizerLite implements ITokenizerLite {
         for(let i = 0; i < chars.length; i++) {
             this.map.set(chars[i],  i)
         }
+        this._specialToken = this.map.get('*') as number
     }
 
     encode(str: string|string[]): number[] {
@@ -30,13 +32,17 @@ export class CharTokenizerLite implements ITokenizerLite {
     get vocab() {
         return this.iToS;
     }
+
+    get specialToken() {    
+        return this._specialToken
+    }
 }
 
 
 export class WordTokenizerLite implements ITokenizerLite {
     map: Map<string, number>
     iToS: string[]
-
+    _specialToken: number
     constructor(str: string) {
         // expects a string with * as spaces
         const words = str.replaceAll('.', '*.').split('*')
@@ -46,6 +52,7 @@ export class WordTokenizerLite implements ITokenizerLite {
         for(let i = 0; i < unique.length; i++) {
             this.map.set(unique[i],  i)
         }
+        this._specialToken = this.map.get('.') as number
     }
 
     format(str: string): string[] {
@@ -64,5 +71,9 @@ export class WordTokenizerLite implements ITokenizerLite {
 
     get vocab() {
         return this.iToS;
+    }
+
+    get specialToken() {    
+        return this._specialToken
     }
 }
