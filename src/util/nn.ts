@@ -29,6 +29,11 @@ export class Neuron {
     }
 }
 
+export interface ILayer {
+    forward(inputs: (Value | number)[]): Value[];
+    parameters: Value[];
+}
+
 export class Layer {
     neurons: Neuron[];
     constructor(nInputs: number, nOutputs: number, nonLinear: boolean) {
@@ -50,6 +55,8 @@ export class Layer {
         return this.neurons.map(neuron => neuron.parameters).flat();
     }
 }
+export const LinearLayer = Layer;
+
 
 export class MLP {
     layers: Layer[];
@@ -77,7 +84,41 @@ export class MLP {
     get parameters() {
         return this.layers.map(layer => layer.parameters).flat();
     }
+}
 
+// export class EmbeddingLayer implements ILayer {
+//     embeddings: Value[];
+//     constructor(nInputs: number, nOutputs: number) {
+//         this.embeddings = [];
+//         for (let i = 0; i < nInputs; i++) {
+//             this.embeddings.push(new Value(Math.random()));
+//         }
+//     }
+
+//     forward(inputs: (Value | number)[]) {
+//         return inputs.map(input => this.embeddings[input as number]);
+//     }
+
+//     get parameters() {
+//         return this.embeddings;
+//     }
+
+
+// }
+
+export class Model {
+    layers: ILayer[];
+    constructor(layers: ILayer[]) {
+        this.layers = layers;
+    }
+
+    forward(inputs: (Value | number)[]) {
+        let inns = inputs;
+        for (let i = 0; i < this.layers.length; i++) {
+            inns = this.layers[i].forward(inns);
+        }
+        return inns;
+    }
 }
 
 export function softmax(values: Value[]) {

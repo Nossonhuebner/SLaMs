@@ -28,13 +28,14 @@ export function MLP() {
     // const [generated, setGenerated] = useState<string[]>([]);
 
     const dataset = createDataset(tokens, contextLength)
-    
+    const vocabSize = tokenizer.vocab.length;
     const [running, setRunning] = useState(false)
-    const embeddings = useMemo(() => createEmbeddings(tokenizer, embeddingSize), []);
+    const embeddings = useMemo(() => createEmbeddings(tokenizer, embeddingSize), [embeddingSize]);
 
     const net = useMemo(() => {
-        return new Net(embeddingSize * contextLength, [tokenizer.vocab.length])
-    }, [embeddingSize, contextLength, tokenizer]);
+
+        return new Net(embeddingSize * contextLength, [vocabSize])
+    }, [embeddingSize, contextLength]);
 
 
     const generate = () => {
