@@ -1,30 +1,22 @@
-# React + TypeScript + Vite
+# SLaMs
+(Smol Language Models)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Overview
+This repository is a collection of small language models that train directly in the browser, showcasing the progression from simple to advanced NLP techniques. Each model is implemented in a React component, demonstrating both linguistic theory and software engineering practices.
 
-Currently, two official plugins are available:
+### Projects Included:
+- Bigram Language Model: Starting with the basics, this model demonstrates the fundamental concepts of language modeling using bigrams.
+- Custom MLP Language Model: A handcrafted TypeScript implementation of a Multi-Layer Perceptron (MLP) combined with embeddings. This basic language model lays the groundwork for more complex architectures.
+- MLP with TensorFlow.js: Enhancing our previous MLP model, this implementation leverages TensorFlow.js for improved handling of modeling, batching, and embeddings - especially since the handrolled version does not train very well :)
+- WaveNet (Under Construction): A project to implement a WaveNet model
+- Transformer (Coming Soon): Implementation of a transformer model, set to push the boundaries of our in-browser NLP capabilities.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+#### TODO:
+   - [ ] For each model / component, add a word-tokenizer for next word predictions, in addition to the current character-level tokens
+   - [ ] Bigram - add support for larger n-grams
+   - [ ] Improve training for handrolled basic MLP model
+   - [ ] Complete WaveNet model
+   - [ ] Complete Transformer model
+   - [ ] Add character / word tokenizers for the original Hebrew version of the dataset
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-   parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-   },
-```
-
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
-
-
-Texts taken from https://mechon-mamre.org/, used `document.querySelectorAll('.h').forEach(e => e.remove());` to remove the hebrew prior to copying
+The dataset is the translated Bible text taken from https://mechon-mamre.org/, (used `document.querySelectorAll('.h').forEach(e => e.remove());` to remove the hebrew prior to copying).
