@@ -34,7 +34,7 @@ export function MLP() {
 
     const net = useMemo(() => {
 
-        return new Net(embeddingSize * contextLength, [vocabSize])
+        return new Net(embeddingSize * contextLength, [50, vocabSize])
     }, [embeddingSize, contextLength]);
 
 
