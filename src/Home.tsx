@@ -1,10 +1,10 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import readme from '../README.md';
 
 const HomePage: React.FC = () => {
   return (
-    <div>
-      <h1>Home Page</h1>
-    </div>
+    <ReactMarkdown children={readme} />
   );
 };
 
