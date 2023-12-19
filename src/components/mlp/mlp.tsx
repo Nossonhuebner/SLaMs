@@ -14,12 +14,12 @@ export function MLP() {
     window.tf = tf;
 
 
-    const [lr, setLr] = useState(0.1);
-    const [batchSize, setBatchSize] = useState(2000);
-    const [contextLength, setContextLength] = useState(5);  // Length of each input sequence
-    const [embeddingSize, setEmbeddingSize] = useState(30);
+    const [lr, setLr] = useState(0.001);
+    const [batchSize, setBatchSize] = useState(500);
+    const [contextLength, setContextLength] = useState(3);  // Length of each input sequence
+    const [embeddingSize, setEmbeddingSize] = useState(10);
     const [sampleSize, setSampleSize] = useState(2000);
-    const [epochs, setEpochs] = useState(20);
+    const [epochs, setEpochs] = useState(5);
 
     const tokenizer = useMemo(() => new CharTokenizerLite(), []);
     const cleaned = clean(English);
