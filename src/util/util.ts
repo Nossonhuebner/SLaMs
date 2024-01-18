@@ -25,6 +25,7 @@ export function predictSequences(tokenizer: ITokenizerLite, model: tf.Sequential
     for (let i = 0; i < count; i++) {
         const word = predictSequence(tokenizer, model, contextLength)
         addGenerated(word)
+        console.log(word)
     }
 }
 
@@ -33,9 +34,9 @@ export function predictSequence(tokenizer: ITokenizerLite, model: tf.Sequential,
     let input = tokenizer.encode("*".repeat(contextLength))
     const result: number[] = []
     while (output !== tokenizer.specialToken) {
-        result.push(tokenizer.specialToken)
-        output = predictToken(input, model)
+        output = predictToken(input, model)[0]
         input = [...input.slice(1), output]
+        result.push(output)
     }
     return tokenizer.decode(result)
 }
@@ -45,6 +46,6 @@ export function predictToken(inputTokens: number[], model: tf.Sequential) {
     const prediction = model.predict(inputTensor) as tf.Tensor;  
     const values = prediction.arraySync() as number[][];
     
-    const result = tf.multinomial(values, 1, undefined, true).arraySync()[0] as number;
+    const result = tf.multinomial(values, 1, undefined, true).arraySync()[0] as number[];
     return result;
 }
