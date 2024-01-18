@@ -1,16 +1,22 @@
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { clean } from "../../util";
 import English from '../../../raw_english'
-import { Value } from "../../util/engine";
-import { MLP as Net, softmax } from "../../util/nn";
 import * as tf from '@tensorflow/tfjs';
-import { Button, Grid, TextField, CircularProgress } from '@mui/material'
+import { Button, Grid, TextField, CircularProgress, Tooltip, IconButton } from '@mui/material'
 import { CharTokenizerLite, ITokenizerLite } from "../../util/tokenizers";
 import { DataItem, createDataset } from "../../util/util";
-
+import { IModel, Linear, Sequential, Tanh, Value, softmax } from 'scratchy-grad'
 import './styles.css'
+import InfoIcon from '@mui/icons-material/Info';              
+
+declare global {
+    interface Window {
+        tf: typeof tf;
+    }
+}
 
 export function MLP() {
+
     window.tf = tf;
 
 
@@ -33,14 +39,16 @@ export function MLP() {
     const embeddings = useMemo(() => createEmbeddings(tokenizer, embeddingSize), [embeddingSize]);
 
     const net = useMemo(() => {
-
-        return new Net(embeddingSize * contextLength, [50, vocabSize])
-    }, [embeddingSize, contextLength]);
+        return new Sequential([
+            new Linear(embeddingSize * contextLength, 50),
+            new Tanh(),
+            new Linear(50, vocabSize),
+        ])
+    }, [embeddingSize, contextLength])
 
 
     const generate = () => {
-        const a = generateWords(10, net, tokenizer, contextLength, embeddings);
-        console.log(a);    
+        console.log(generateWords(10, net, tokenizer, contextLength, embeddings));    
     }
 
     const run = () => {
@@ -70,11 +78,16 @@ export function MLP() {
             <Button onClick={generate}>
                 generate
             </Button>
+            <Tooltip title="Training deets in console">
+                <IconButton>
+                <InfoIcon />
+                </IconButton>
+            </Tooltip>
         </>
     )
 }
 
-function runEpocs(net: Net, dataset: DataItem[], embeddings: Value[][], lr: number, epochs: number, batchSize: number, callBack: () => void) {
+function runEpocs(net: IModel, dataset: DataItem[], embeddings: Value[][], lr: number, epochs: number, batchSize: number, callBack: () => void) {
     for(let i = 0; i < epochs; i++) {
         const [training, validation] = split(shuffle(dataset));
         console.log('epoch:', i);
@@ -88,24 +101,24 @@ function runEpocs(net: Net, dataset: DataItem[], embeddings: Value[][], lr: numb
     callBack()
 }
 
-export function generateWords(n: number, net: Net, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
-    const words = [];
+export function generateWords(n: number, net: IModel, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
+    const words: string[] = [];
     for (let i = 0; i < n; i++) {
         words.push(generateWord(net, tkn, contextLength, embeddings));
     }
     return words;
 }
 
-function generateWord(net: Net, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
+function generateWord(net: IModel, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
     let base = "*".repeat(contextLength);
-    const chars = [];
-    let next = null;
+    const chars: string[] = [];
+    let next = '';
     while (next != "*") {
         const input = tkn.encode(base) as number[];
         const embs = getEmbeddings(input, embeddings);
-        const logits = net.forward(embs.flat());
+        const logits = net.forward([embs.flat()]);
         const probs = softmax(logits);
-        const idx = sampleProb(probs.map(v => v.data));
+        const idx = sampleProb(probs[0].map(v => v.data));
         next = tkn.decode([idx]);
         chars.push(next);
         base = base.slice(1) + next;
@@ -118,18 +131,18 @@ function sampleProb(row: number[]) {
 }
 
 
-function valid(net: Net, data: DataItem[], embeddings: Value[][]) {
+function valid(net: IModel, data: DataItem[], embeddings: Value[][]) {
     const count = data.length;
     let correct = 0;
     data.forEach(item => {
         const { input, output } = item;
 
         const embs = getEmbeddings(input, embeddings);
-        const logits = net.forward(embs.flat());
+        const logits = net.forward([embs.flat()]);
         const probs = softmax(logits);
 
         const yIdx = output;
-        const probVals = probs.map(v => v.data);
+        const probVals = probs[0].map(v => v.data);
         const maxProb = Math.max(...probVals)
         const predIdx = probVals.indexOf(maxProb);
         correct += Number(yIdx == predIdx);
@@ -148,15 +161,15 @@ function getEmbeddings(input: number[], embeddings: Value[][]) {
     return embedding;
 }
 
-function train(net: Net, data: DataItem[], embeddings: Value[][], lr: number) {
+function train(net: IModel, data: DataItem[], embeddings: Value[][], lr: number) {
     const count = data.length;
     let aggLoss = new Value(0)
     data.forEach(item => {
         const { input, output } = item;
         const embs = getEmbeddings(input, embeddings);
         // forward
-        const logits = net.forward(embs.flat());
-        const probs = softmax(logits);
+        const logits = net.forward([embs.flat()]);
+        const probs = softmax(logits)[0];
 
         const loss = probs[output].negativeLogLikelihood()
         aggLoss = aggLoss.plus(loss);
@@ -174,7 +187,7 @@ function train(net: Net, data: DataItem[], embeddings: Value[][], lr: number) {
 }
 
 function batch<T>(array: T[], batchSize: number = 64) {
-    const batches = [];
+    const batches: T[][] = [];
     for (let i = 0; i < array.length; i += batchSize) {
         batches.push(array.slice(i, i + batchSize));
     }
@@ -223,4 +236,4 @@ function split<T>(array: T[], ratio: number = .8) {
     return [train, valid];
 }
 
-export default MLP
+export default MLP;
