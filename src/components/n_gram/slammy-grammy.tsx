@@ -1,30 +1,61 @@
-// import Hebrew from '../../raw_hebrew'
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import English from '../../../raw_english'
 import { CharacterTokenizer, clean } from '../../util';
 import * as tf from '@tensorflow/tfjs';
 import DisplayTable from './DisplayTable';
 import { buildGrid, calculateLoss, generateWords } from './util';
-import { Select, MenuItem  } from '@mui/material'
-import { useState } from 'react';
+import { Select, MenuItem, Button } from '@mui/material'
 
 export function SlammyGrammy() {
-    const cleaned = clean(English);
-    const [n, setN] = useState<number>()
-    const tkn = new CharacterTokenizer(cleaned);
+    const cleaned = useMemo(() => clean(English), []);
+    const [n, setN] = useState<number>(1)
+    const [generatedWords, setGeneratedWords] = useState<string>('');
+    const [displayedWords, setDisplayedWords] = useState<string>('');
+    const [isGenerating, setIsGenerating] = useState(false);
+    const tkn = useMemo(() => new CharacterTokenizer(cleaned), [cleaned]);
+    const outputRef = useRef<HTMLDivElement>(null);
 
-    const tokens = tkn.tokenize(cleaned);
-    const x = tokens.slice(0, tokens.length - 1);
-    const y = tokens.slice(1, tokens.length);
+    const tokens = useMemo(() => tkn.tokenize(cleaned), [tkn, cleaned]);
+    const x = useMemo(() => tokens.slice(0, tokens.length - 1), [tokens]);
+    const y = useMemo(() => tokens.slice(1, tokens.length), [tokens]);
 
-    const grid = buildGrid(x, y, tkn);
-    const normalizedGrid = buildGrid(x, y, tkn, true);
+    const grid = useMemo(() => buildGrid(x, y, tkn), [x, y, tkn]);
+    const normalizedGrid = useMemo(() => {
+        const grid = buildGrid(x, y, tkn, true)
+        console.log(calculateLoss(grid, x, y, tkn))
+        return grid
+    }, [x, y, tkn]);
 
     window.tkn = tkn;
     window.txt = cleaned;
     window.tensor = grid;
     window.tf = tf;
 
-    console.log(calculateLoss(normalizedGrid, x, y, tkn))
+
+    const handleGenerateWords = () => {
+        if (isGenerating) return;
+        setIsGenerating(true);
+        const words = generateWords(normalizedGrid, tkn, 30);
+        setGeneratedWords(prev => prev + ' ' + words.join(' '));
+    };
+
+    useEffect(() => {
+        if (generatedWords.length > displayedWords.length) {
+            const timer = setTimeout(() => {
+                setDisplayedWords(generatedWords.slice(0, displayedWords.length + 1));
+            }, 10); // Adjust this value to change typing speed
+            return () => clearTimeout(timer);
+        } else {
+            setIsGenerating(false);
+        }
+    }, [generatedWords, displayedWords]);
+
+    useEffect(() => {
+        if (outputRef.current) {
+            outputRef.current.scrollTop = outputRef.current.scrollHeight;
+        }
+    }, [displayedWords]);
+
     return (
         <div>
             <h1>Slam Grams</h1>
@@ -34,17 +65,41 @@ export function SlammyGrammy() {
             </Select>
             {tkn && (
                 <>
-            counts: <DisplayTable grid={grid} decode={(tokens) => tkn.decode(tokens)} />
-            normalized per row as probabilities: <DisplayTable grid={normalizedGrid} decode={(tokens) => tkn.decode(tokens)} />
-            {generateWords(normalizedGrid, tkn, 30).map((word, i) => <div key={i}>{word}</div>)}
+                    <Button 
+                        variant="contained" 
+                        onClick={handleGenerateWords} 
+                        style={{ margin: '10px 0' }}
+                        disabled={isGenerating}
+                    >
+                        Generate Words
+                    </Button>
+                    <div 
+                        ref={outputRef}
+                        style={{ 
+                            height: '100px', 
+                            overflow: 'auto', 
+                            backgroundColor: '#f8f8f8', // Lighter background
+                            padding: '10px',
+                            marginBottom: '20px',
+                            color: '#333',
+                            fontWeight: 500,
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word'
+                        }}
+                    >
+                        {displayedWords}
+                    </div>
+                    <h3>Token counts:</h3>
+                    <DisplayTable grid={grid} decode={(tokens) => tkn.decode(tokens)} />
+                    <h3>Tokens counts normalized per row as probabilities:</h3>
+                    <DisplayTable grid={normalizedGrid} decode={(tokens) => tkn.decode(tokens)} />
                 </>
             )}
-
         </div>
     );
 }
-
-
 
 declare global {
     interface Window {
