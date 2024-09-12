@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import English from '../../../raw_english'
 import { CharacterTokenizer, clean } from '../../util';
 import * as tf from '@tensorflow/tfjs';

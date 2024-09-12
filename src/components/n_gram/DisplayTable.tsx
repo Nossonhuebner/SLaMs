@@ -1,4 +1,3 @@
-import React from 'react';
 import './DisplayTable.css'; // We'll create this file for styles
 
 type Props = {
