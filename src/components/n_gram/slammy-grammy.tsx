@@ -4,7 +4,7 @@ import { CharacterTokenizer, clean } from '../../util';
 import * as tf from '@tensorflow/tfjs';
 import DisplayTable from './DisplayTable';
 import { buildGrid, calculateLoss, generateWords } from './util';
-import { Select, MenuItem, Button } from '@mui/material'
+import { Select, MenuItem, Button, Switch, FormControlLabel } from '@mui/material'
 
 export function SlammyGrammy() {
     const cleaned = useMemo(() => clean(English), []);
@@ -14,6 +14,7 @@ export function SlammyGrammy() {
     const [isGenerating, setIsGenerating] = useState(false);
     const tkn = useMemo(() => new CharacterTokenizer(cleaned), [cleaned]);
     const outputRef = useRef<HTMLDivElement>(null);
+    const [showNormalized, setShowNormalized] = useState(false);
 
     const tokens = useMemo(() => tkn.tokenize(cleaned), [tkn, cleaned]);
     const x = useMemo(() => tokens.slice(0, tokens.length - 1), [tokens]);
@@ -78,7 +79,7 @@ export function SlammyGrammy() {
                         style={{ 
                             height: '100px', 
                             overflow: 'auto', 
-                            backgroundColor: '#f8f8f8', // Lighter background
+                            backgroundColor: '#f8f8f8',
                             padding: '10px',
                             marginBottom: '20px',
                             color: '#333',
@@ -91,10 +92,21 @@ export function SlammyGrammy() {
                     >
                         {displayedWords}
                     </div>
-                    <h3>Token counts:</h3>
-                    <DisplayTable grid={grid} decode={(tokens) => tkn.decode(tokens)} />
-                    <h3>Tokens counts normalized per row as probabilities:</h3>
-                    <DisplayTable grid={normalizedGrid} decode={(tokens) => tkn.decode(tokens)} />
+                    <div style={{ marginBottom: '20px' }}>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={showNormalized}
+                                    onChange={(e) => setShowNormalized(e.target.checked)}
+                                />
+                            }
+                            label="Show normalized probabilities"
+                        />
+                    </div>
+                    <DisplayTable 
+                        grid={showNormalized ? normalizedGrid : grid} 
+                        decode={(tokens) => tkn.decode(tokens)} 
+                    />
                 </>
             )}
         </div>
