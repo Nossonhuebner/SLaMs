@@ -20,3 +20,9 @@ This repository is a collection of small language models that train directly in 
    - [ ] Add character / word tokenizers for the original Hebrew version of the dataset
 
 The dataset is the translated Bible text taken from https://mechon-mamre.org/, (used `document.querySelectorAll('.h').forEach(e => e.remove());` to remove the hebrew prior to copying).
+
+## Appendix: LLM-Assisted Follow-ups & Debugging
+
+A log of changes driven by pair-programming sessions with Claude. Each entry links to the commit and summarizes what was addressed.
+
+- [`2e268a4`](https://github.com/Nossonhuebner/SLaMs/commit/2e268a44879cb8bf06c36c33b7d682ad6e6d5861) — Review & repair of in-flight changes across the MLP and RNN components: restored the TF-based `/mlp-v2` route and added `/mlp-v3`; replaced the TF MLP's broken `JSON.parse(model)` worker contract with an architecture-params + weight-arrays protocol so training actually runs off the main thread; dropped a learning-rate schedule in `tf_2` that was resetting Adam state every epoch (and running LR=0 at epoch 0); fixed the RNN by adding an embedding layer and unifying train/generate shapes; widened model types in `util.ts`. Also introduced a Vitest test suite (`tests/`) covering the three tokenizer implementations, `createDataset` in both shapes, `clean()` (English + Hebrew paths), and the Genesis corpus invariants.
