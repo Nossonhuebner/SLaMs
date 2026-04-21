@@ -1,13 +1,12 @@
 import { useMemo, useState } from "react";
-import { clean } from "../../util";
-import English from '../../../raw_english'
 import * as tf from '@tensorflow/tfjs';
 import { Button, Grid, TextField, CircularProgress, Tooltip, IconButton } from '@mui/material'
-import { CharTokenizerLite, ITokenizerLite } from "../../util/tokenizers";
-import { DataItem, createDataset } from "../../util/util";
-import { IModel, Linear, Sequential, Tanh, Value, softmax } from 'scratchy-grad'
+import { IModel, Linear, Sequential, Value, asValue, softmax } from 'scratchy-grad'
 import './styles.css'
 import InfoIcon from '@mui/icons-material/Info';              
+import { createDataset, DataItem, Tokenizer } from "../../util/tok2";
+import { genesisClean } from "../../util/genesis";
+import { ILayer } from "scratchy-grad/layers";
 
 declare global {
     interface Window {
@@ -15,36 +14,47 @@ declare global {
     }
 }
 
+export class Relu implements ILayer {
+    get parameters() {
+        return [];
+    }
+    eval() {}
+    train() {}
+    forward(inputBatch: (number | Value)[][]) {
+        return inputBatch.map(input => {
+            return input.map(i => asValue(i).relu())
+        })
+    }
+}
+
+
 export function MLP() {
 
     window.tf = tf;
 
 
     const [lr, setLr] = useState(0.001);
-    const [batchSize, setBatchSize] = useState(500);
+    const [batchSize, setBatchSize] = useState(64);
     const [contextLength, setContextLength] = useState(3);  // Length of each input sequence
     const [embeddingSize, setEmbeddingSize] = useState(10);
     const [sampleSize, setSampleSize] = useState(2000);
     const [epochs, setEpochs] = useState(5);
 
-    const tokenizer = useMemo(() => new CharTokenizerLite(), []);
-    const cleaned = clean(English);
-    const sample = cleaned.slice(0, sampleSize);
-    const tokens = tokenizer.encode(sample);
-    // const [generated, setGenerated] = useState<string[]>([]);
+    const tokenizer = useMemo(() => new Tokenizer(genesisClean.slice(0, sampleSize)), [sampleSize]);
 
-    const dataset = createDataset(tokens, contextLength)
+    const dataset = createDataset(genesisClean.slice(0, sampleSize), tokenizer, contextLength)
     const vocabSize = tokenizer.vocab.length;
+    const embeddings = useMemo(() => createEmbeddings(tokenizer.vocab.length, embeddingSize), [tokenizer, embeddingSize]);
+
     const [running, setRunning] = useState(false)
-    const embeddings = useMemo(() => createEmbeddings(tokenizer, embeddingSize), [embeddingSize]);
 
     const net = useMemo(() => {
         return new Sequential([
-            new Linear(embeddingSize * contextLength, 50),
-            new Tanh(),
-            new Linear(50, vocabSize),
+            new Linear(embeddingSize * contextLength, 30),
+            new Relu(),
+            new Linear(30, vocabSize),
         ])
-    }, [embeddingSize, contextLength])
+    }, [embeddingSize, contextLength, vocabSize])
 
 
     const generate = () => {
@@ -61,7 +71,7 @@ export function MLP() {
     return (
         <>
             <Grid container className="inputContainer">
-                <Grid item xs={6}><TextField label={`Sample Size (max ${cleaned.length.toLocaleString('en-US')})`} value={sampleSize} onChange={e => setSampleSize(parseInt(e.target.value))} /></Grid>
+                <Grid item xs={6}><TextField label={`Sample Size (max ${genesisClean.length.toLocaleString('en-US')})`} value={sampleSize} onChange={e => setSampleSize(parseInt(e.target.value))} /></Grid>
                 <Grid item xs={6}><TextField label="Batch Size" value={batchSize} onChange={e => setBatchSize(parseInt(e.target.value))} /></Grid>
                 
 
@@ -101,7 +111,7 @@ function runEpocs(net: IModel, dataset: DataItem[], embeddings: Value[][], lr: n
     callBack()
 }
 
-export function generateWords(n: number, net: IModel, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
+export function generateWords(n: number, net: IModel, tkn: Tokenizer, contextLength: number, embeddings: Value[][]) {
     const words: string[] = [];
     for (let i = 0; i < n; i++) {
         words.push(generateWord(net, tkn, contextLength, embeddings));
@@ -109,11 +119,12 @@ export function generateWords(n: number, net: IModel, tkn: ITokenizerLite, conte
     return words;
 }
 
-function generateWord(net: IModel, tkn: ITokenizerLite, contextLength: number, embeddings: Value[][]) {
+function generateWord(net: IModel, tkn: Tokenizer, contextLength: number, embeddings: Value[][]) {
     let base = "*".repeat(contextLength);
     const chars: string[] = [];
     let next = '';
-    while (next != "*") {
+
+    while (next != tkn.endChar) {
         const input = tkn.encode(base) as number[];
         const embs = getEmbeddings(input, embeddings);
         const logits = net.forward([embs.flat()]);
@@ -178,7 +189,6 @@ function train(net: IModel, data: DataItem[], embeddings: Value[][], lr: number)
     net.parameters.forEach(p => p.grad = 0);
     aggLoss = aggLoss.divide(count);
     aggLoss.backward()
-
     net.parameters.forEach(p => p.data += -lr * clipGradient(p.grad, -5, 5))
 
     // const avg =  aggLoss / count;
@@ -202,9 +212,9 @@ function clipGradient(grad: number, min: number, max: number) {
 }
 
 
-function createEmbeddings(tkn: ITokenizerLite, embSize: number) {
+function createEmbeddings(vocabSize: number, embSize: number) {
     const embeddings: Value[][] = [];
-    for(let i = 0; i < tkn.vocab.length; i++) {
+    for(let i = 0; i < vocabSize; i++) {
         const emb: Value[] = []
         for(let j = 0; j < embSize; j++) {
             emb.push(new Value(Math.random()))

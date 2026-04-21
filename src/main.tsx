@@ -13,6 +13,8 @@ import MLP from './components/mlp/mlp.tsx';
 import TfMlp from './components/mlp/tf_mlp.tsx';
 import WaveNet from './components/wavenet/wavenet.tsx';
 import Transformer from './components/transformer/transformer.tsx';
+import TF2 from './components/mlp/tf_2.tsx';
+import RNN from './components/rnn/rnn.tsx';
 
 const router = createHashRouter([
   {
@@ -33,10 +35,16 @@ const router = createHashRouter([
       path: "mlp-v2", element: <TfMlp/>
     },
     {
+      path: "mlp-v3", element: <TF2/>
+    },
+    {
       path: "wavenet", element: <WaveNet/>
     },
     {
       path: "transformer", element: <Transformer/>
+    },
+    {
+      path: "rnn", element: <RNN/>
     }
   ]
   }

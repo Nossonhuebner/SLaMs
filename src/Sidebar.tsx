@@ -46,6 +46,11 @@ export function Sidebar() {
             </ListItemButton>
           </ListItem>
           <ListItem disablePadding>
+            <ListItemButton component={Link} to={`mlp-v3`}>
+              <ListItemText primary="Multi-Layer Perceptron V3 (tf)" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
             <ListItemButton component={Link} to={`wavenet`}>
               <ListItemText primary="WaveNet" />
             </ListItemButton>
@@ -53,6 +58,11 @@ export function Sidebar() {
           <ListItem disablePadding>
             <ListItemButton component={Link} to={`transformer`}>
               <ListItemText primary="Transformer" />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding>
+            <ListItemButton component={Link} to={`rnn`}>
+              <ListItemText primary="RNN" />
             </ListItemButton>
           </ListItem>
       </List>
